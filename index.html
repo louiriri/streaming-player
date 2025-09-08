@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/shaka-player.ui.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/controls.min.css" />
+    <style>
+      body {
+        margin: 0;
+        background: black;
+      }
+      /* Hide unwanted controls */
+      .shaka-spinner-container,
+      .shaka-current-time,
+      .shaka-progress-container {
+        display: none !important;
+      }
+
+      /* Loader */
+      #loader {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        font-size: 20px;
+        z-index: 10;
+      }
+      #loader img {
+        width: 120px;
+        margin-bottom: 15px;
+        animation: spin 2s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Live Tag */
+      #liveTag {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: red;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 14px;
+        z-index: 5;
+      }
+
+      /* Audio Toggle */
+      #audioToggle {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+        z-index: 5;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loader -->
+    <div id="loader">
+      <img src="https://i.postimg.cc/3x3QzSGq/spinner.gif" alt="loading" />
+      Tafadhali Subiri...
+    </div>
+
+    <!-- Live Tag -->
+    <div id="liveTag">LIVE</div>
+
+    <!-- Audio Toggle -->
+    <button id="audioToggle">🔇 Off</button>
+
+    <div data-shaka-player-container style="position:absolute;top:0;left:0;width:100%;height:100%;">
+      <video autoplay data-shaka-player id="video" style="width:100%;height:100%;"></video>
+    </div>
+
+    <script>
+      var reloadtime = 1000;
+
+      async function init() {
+        const video = document.getElementById('video');
+        const ui = video.ui;
+        const controls = ui.getControls();
+        const player = controls.getPlayer();
+
+        // Configure player
+        player.configure({
+          drm: {
+            servers: {
+              'com.widevine.alpha': 'https://azy4sj9b.anycast.nagra.com/AZY4SJ9B/wvls/contentlicenseservice/v1/licenses'
+            }
+          },
+          abr: {
+            enabled: true,
+            defaultBandwidthEstimate: 100,
+            restrictions: {
+              maxHeight: 240 // start in low quality
+            }
+          }
+        });
+
+        // Headers
+        player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+          if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
+            request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
+            request.headers['referer'] = 'app.azamtvmax.com';
+            request.headers['origin'] = 'app.azamtvmax.com';
+            request.headers['nv-tenant-id'] = 'AZY4SJ9B';
+            request.headers['nv-authorizations'] =
+              "eyJraWQiOiI3NzUwOTAiLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2ZXIiOiIxLjAiLCJjb250ZW50UmlnaHRzIjpbeyJjb250ZW50SWQiOiJDSC0zOTc0YzJjZC05ZWM0LTRkMDMtODJiMS05Yzk5Mzk3M2U0ODciLCJzdGFydCI6IjIwMjUtMDMtMzFUMDA6MDA6MDBaIiwiZW5kIjoiMjAzMC0wMi0xOVQwMDowMDowMFoiLCJ1c2FnZVJ1bGVzUHJvZmlsZUlkIjoiU0QifV0sInRlbmFudElkIjoiQVpZNFNKOUIiLCJ0eXAiOiJDb250ZW50QXV0aFoiLCJleHAiOjE3NTk0Mjc5NzYsImRldmljZSI6eyJ3YXRlcm1hcmtpbmciOnRydWUsImFjY291bnRJZCI6Ijc3OTExMSJ9fQ.XSKj5b3dJxskzbzOmPdmbnFsZpWRVKOTWpFKPbdM_6Q";
+          }
+          if (type == shaka.net.NetworkingEngine.RequestType.MANIFEST) {
+            request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
+            request.headers['referer'] = 'app.azamtvmax.com';
+            request.headers['origin'] = 'app.azamtvmax.com';
+          }
+        });
+
+        try {
+          await player.load("https://cdnblncr.azamtvltd.co.tz/live/eds/AzamTwo/DASH/AzamTwo.mpd?cdntoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NTcyOTI1NjgsInNpcCI6IjE1LjE1OC4xMS40NCJ9.Zv0IOZ4Ej88zXNYtSbQfb4TtLEbA83K6E8aGtUwWHOmyPyhekZKhiATwM57ZXgVMX72A9GphTzND2yhMk9zBow&hdnts=exp=1757292568~acl=/*~hmac=233ba1df0562899cc23926c2ea43a094f498e640b3ac4009d470eab384aff978");
+          console.log("The video has now been loaded!");
+
+          // Hide loader
+          document.getElementById("loader").style.display = "none";
+
+          // Quality selection menu
+          ui.configure({
+            controlPanelElements: ["quality", "fullscreen", "mute"]
+          });
+
+          document.addEventListener("click", function () {
+            video.play();
+          });
+
+        } catch (error) {
+          setTimeout(function () {
+            location.reload();
+          }, reloadtime);
+          onPlayerError(error);
+        }
+      }
+
+      function onPlayerErrorEvent(errorEvent) {
+        setTimeout(() => location.reload(), reloadtime);
+        onPlayerError(errorEvent.detail);
+      }
+      function onPlayerError(error) {
+        console.error("Error code", error.code, "object", error);
+      }
+      function initFailed() {
+        setTimeout(() => location.reload(), reloadtime);
+        console.error("Unable to load the UI library!");
+      }
+
+      document.addEventListener("shaka-ui-loaded", init);
+      document.addEventListener("shaka-ui-load-failed", initFailed);
+
+      // Audio toggle button
+      document.getElementById("audioToggle").addEventListener("click", function() {
+        const video = document.getElementById("video");
+        if (video.muted) {
+          video.muted = false;
+          this.textContent = "🔊 On";
+        } else {
+          video.muted = true;
+          this.textContent = "🔇 Off";
+        }
+      });
+    </script>
+  </body>
+</html>
